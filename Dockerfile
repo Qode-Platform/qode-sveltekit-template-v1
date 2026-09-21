@@ -10,14 +10,14 @@
 # image serves at the host root under k8s and the agent's /direct/<id>:<port>
 # run supplies its own prefix.
 
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 ARG BUILD_ID=""
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOST=0.0.0.0 BUILD_ID=$BUILD_ID
