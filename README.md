@@ -29,15 +29,11 @@ trusting it.
 
 Listens on `$PORT` (default `3000`); health check hits `/`.
 
-## BASE_PATH
+## Serving
 
-The fleet injects `BASE_PATH` (`/direct/<agent>:<port>`) and nginx forwards
-that prefix **unchanged** — so this app serves every route and asset under
-it. An empty or unset value means standalone mode: serve at the host root.
-
-- SvelteKit `paths.base` in vite.config.ts, baked at BUILD time.
-- `HEALTH_PATH` in `fleet.conf` stays un-prefixed; the fleet prepends `$BASE_PATH` itself.
-- A value like `direct/x:3000/` is normalised to `/direct/x:3000`.
+The fleet injects `PORT` and `DATABASE_URL`. The app is served at the root
+(`/`) of its own hostname, so routes, assets and API calls use plain
+root-relative paths.
 
 ## What differs from stock output
 
@@ -87,45 +83,3 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
-
-## Rule: everything under BASE_PATH
-
-This app is not served at the host root. The fleet ingress serves it under a
-proxy prefix and forwards that prefix **unchanged**:
-
-```
-BASE_PATH=/direct/<agent>:<port>
-```
-
-**Every API call and every asset reference must carry that base path.** A bare
-`"/..."` literal resolves against the host root, so it works on localhost and
-404s in the fleet.
-
-**What SvelteKit rewrites for you:** route resolution and `data-sveltekit`
-navigation via `paths.base` (set from `BASE_PATH` in `vite.config.ts`), Vite's
-handling of imported assets (`import favicon from '$lib/assets/favicon.svg'`),
-and the bundle/`%sveltekit.assets%` URLs injected into `src/app.html`.
-
-**What is NOT rewritten:** `fetch`/XHR URLs, hand-written `href=` and `src=`
-string literals in `.svelte` markup, CSS `url(...)`, and anything else built
-from a string in code.
-
-**Use this framework's mechanism:** `base` from `$app/paths`.
-
-```svelte
-<script lang="ts">
-  import { base } from '$app/paths';
-  const items = fetch(`${base}/api/items`);
-</script>
-
-<a href="{base}/about">About</a>
-```
-
-**Verify with:**
-
-```bash
-npm run check:base-path
-```
-
-A line that is genuinely framework-handled can be exempted with a trailing
-`base-path-ok` comment (say why).
